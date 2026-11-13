@@ -2015,7 +2015,8 @@ function selectIndiaState(state) {
   render(); updateNavActive();
   const msg='Showing GHOOMO itineraries for '+chosen+'.';
   const status=document.getElementById('india-map-status'); if(status) status.textContent=msg;
-  narrateIndiaState(chosen);
+  if(window.GhoomoTourismSelect)window.GhoomoTourismSelect(chosen);
+  else narrateIndiaState(chosen);
 }
 function selectIndiaInterest(interest) { selectedIndiaInterest=interest||'all'; render(); updateNavActive(); const label=INDIA_INTERESTS.find(x=>x.id===selectedIndiaInterest)?.label||'all interests'; const msg='Travel interest selected: '+label+'. Choose a state to see matching itineraries.'; const status=document.getElementById('india-map-status'); if(status) status.textContent=msg; if(window.GhoomoVoiceSpeak) window.GhoomoVoiceSpeak(msg); }
 function stateRegion(name) {
