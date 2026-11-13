@@ -1,4 +1,4 @@
-const CACHE='ghoomo-destinations-pwa-v20261113-senior-friendly-stage1-v6';
+const CACHE='ghoomo-destinations-pwa-v20261113-multilingual-speech-stage2-v7';
 const CORE=['./','./index.html','./manifest.webmanifest','./css/ghoomo.css','./js/ghoomo1.js','./js/ghoomo2.js','./js/voice.js','./js/decision-lab.js','./assets/icon-192.png','./assets/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
