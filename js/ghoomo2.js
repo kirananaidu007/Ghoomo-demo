@@ -1473,9 +1473,9 @@ function renderHome() {
           <div class="filter-field">
             <label>${t('filter_category')}</label>
             <div class="chip-row">
-              <span class="chip" onclick="toggleCategoryFilter('verified', this)">Verified Operators</span>
+              <span class="chip" onclick="toggleCategoryFilter('verified', this)">Verified Tour Operators</span>
+              <span class="chip" onclick="toggleCategoryFilter('local', this)">Local Tour Operators</span>
               <span class="chip" onclick="toggleCategoryFilter('ota', this)">OTA Platforms</span>
-              <span class="chip" onclick="toggleCategoryFilter('local', this)">Local Operators</span>
             </div>
           </div>
         </div>
