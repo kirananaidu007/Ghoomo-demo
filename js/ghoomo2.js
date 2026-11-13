@@ -2095,6 +2095,7 @@ function initIndiaExplorer() {
   const layer=map.querySelector('.india-map-zoom-layer');
   const applyZoom=()=>{layer.setAttribute('transform',`translate(${W/2} ${H/2}) scale(${zoom}) translate(${-W/2} ${-H/2})`);};
   map.querySelectorAll('[data-map-zoom]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.mapZoom;zoom=action==='reset'?1:Math.max(1,Math.min(3,zoom*(action==='in'?1.25:0.8)));applyZoom();}));
+  if(window.GhoomoTourismDecorateMap)window.GhoomoTourismDecorateMap();
   map.querySelectorAll('[data-map-state]').forEach(path=>{
     path.addEventListener('click',()=>selectIndiaState(path.dataset.mapState));
     path.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectIndiaState(path.dataset.mapState);}});
