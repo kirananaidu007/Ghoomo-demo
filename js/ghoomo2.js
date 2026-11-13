@@ -950,7 +950,7 @@ const DESTINATIONS = [
 /* ---------- PROVIDER CATEGORIES ---------- */
 const CATEGORY_META = {
   verified: {
-    label: 'Verified Operators', desc: 'Established tour companies', icon: '✓',
+    label: 'Verified Tour Operators', desc: 'Established tour companies', icon: '✓',
     providers: ['Veena World', 'Thomas Cook India', 'Kesari Tours', 'SOTC Travel', 'IRCTC Tourism']
   },
   ota: {
@@ -1197,7 +1197,7 @@ Object.assign(I18N, EXTRA_LANGS);
 
 /* ---------- Our Model page translations ---------- */
 const MODEL_I18N = {
-  en:{model_eyebrow:'THREE-HEAD TOUR STRUCTURE',model_title:'Every trip, three ways to book it',verified_title:'Verified Operators',verified_desc:'Established Indian tour companies with a long track record. Operator listings can grow over time.',ota_title:'OTA Platforms',ota_desc:"India's major online travel platforms. Platform listings can grow over time.",local_title:'Local Tour Operators',local_desc:'Destination specialists who know the region best — smaller, local, and often the most personal way to travel.'},
+  en:{model_eyebrow:'THREE-HEAD TOUR STRUCTURE',model_title:'Every trip, three ways to book it',verified_title:'Verified Tour Operators',verified_desc:'Established Indian tour companies with a long track record. Operator listings can grow over time.',ota_title:'OTA Platforms',ota_desc:"India's major online travel platforms. Platform listings can grow over time.",local_title:'Local Tour Operators',local_desc:'Destination specialists who know the region best — smaller, local, and often the most personal way to travel.'},
   hi:{model_eyebrow:'तीन-प्रमुख यात्रा संरचना',model_title:'हर यात्रा के लिए बुकिंग के तीन तरीके',verified_title:'सत्यापित ऑपरेटर',verified_desc:'स्थापित भारतीय टूर कंपनियाँ जिनका लंबा अनुभव है। ऑपरेटरों की सूची समय के साथ बढ़ सकती है।',ota_title:'ओटीए प्लेटफ़ॉर्म',ota_desc:'भारत के प्रमुख ऑनलाइन ट्रैवल प्लेटफ़ॉर्म।',local_title:'स्थानीय टूर ऑपरेटर',local_desc:'क्षेत्र को जानने वाले स्थानीय यात्रा विशेषज्ञ।'},
   bn:{model_eyebrow:'তিন-ধরনের ট্যুর কাঠামো',model_title:'প্রতিটি ভ্রমণের জন্য বুকিংয়ের তিনটি উপায়',verified_title:'যাচাইকৃত অপারেটর',verified_desc:'প্রতিষ্ঠিত ভারতীয় ট্যুর কোম্পানি।',ota_title:'ওটিএ প্ল্যাটফর্ম',ota_desc:'ভারতের প্রধান অনলাইন ট্রাভেল প্ল্যাটফর্ম।',local_title:'স্থানীয় ট্যুর অপারেটর',local_desc:'অঞ্চলকে ভালোভাবে জানা স্থানীয় বিশেষজ্ঞ।'},
   ta:{model_eyebrow:'மூன்று வகை சுற்றுலா அமைப்பு',model_title:'ஒவ்வொரு பயணத்திற்கும் முன்பதிவு செய்ய மூன்று வழிகள்',verified_title:'சரிபார்க்கப்பட்ட இயக்குநர்கள்',verified_desc:'நிறுவப்பட்ட இந்திய சுற்றுலா நிறுவனங்கள்.',ota_title:'OTA தளங்கள்',ota_desc:'இந்தியாவின் முக்கிய ஆன்லைன் பயண தளங்கள்.',local_title:'உள்ளூர் சுற்றுலா இயக்குநர்கள்',local_desc:'பகுதியை நன்கு அறிந்த உள்ளூர் நிபுணர்கள்.'},
