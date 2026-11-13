@@ -2009,22 +2009,43 @@ function initIndiaExplorer() {
  renderIndiaSchematicMap(map);
  const search=document.getElementById('india-state-search');
  search?.addEventListener('input',()=>{const q=search.value.toLowerCase().trim();document.querySelectorAll('.india-state-group').forEach(group=>{let any=false;group.querySelectorAll('[data-state]').forEach(btn=>{const show=btn.dataset.state.toLowerCase().includes(q);btn.hidden=!show;if(show)any=true;});group.hidden=!any;});});
+ // Map is progressive enhancement: the state list remains available if boundary data is offline.
  const geoUrls=['https://raw.githubusercontent.com/datameet/maps/master/States/Admin2.geojson','https://raw.githubusercontent.com/iamaanahmad/GeoJson-of-Indian-States/main/indian-states.geojson'];
- const fetchMapData=async()=>{let lastError;for(const url of geoUrls){try{const response=await fetch(url);if(!response.ok)throw new Error('Map data unavailable');const data=await response.json();if(data&&Array.isArray(data.features)&&data.features.length)return data;}catch(error){lastError=error;}}throw lastError||new Error('Map data unavailable');};
+ const fetchMapData=async()=>{let lastError;for(const url of geoUrls){try{const response=await fetch(url);if(!response.ok)throw new Error('Map data unavailable');const data=await response.json();if(data&&Array.isArray(data.features)&&data.features.length>=28)return data;}catch(error){lastError=error;}}throw lastError||new Error('Map data unavailable');};
  fetchMapData().then(data=>{
+  if(!map.isConnected)return;
   const features=(data.features||[]).filter(f=>f.geometry&&f.properties);
-  if(!features.length)throw new Error('No state boundaries found');
-  const coords=[];const visit=c=>{if(typeof c[0]==='number')coords.push(c);else c.forEach(visit)};features.forEach(f=>visit(f.geometry.coordinates));
+  const featureName=f=>f.properties.name||f.properties.NAME_1||f.properties.st_nm||f.properties.ST_NM||f.properties.state||f.properties.NAME;
+  const recognized=features.filter(f=>canonicalIndiaState(featureName(f)||''));
+  if(recognized.length<28)throw new Error('Incomplete state boundary data');
+  const coords=[];const visit=c=>{if(typeof c[0]==='number'){if(Number.isFinite(c[0])&&Number.isFinite(c[1]))coords.push(c);}else c.forEach(visit)};
+  recognized.forEach(f=>visit(f.geometry.coordinates));
+  if(!coords.length)throw new Error('Invalid map coordinates');
   const xs=coords.map(c=>c[0]),ys=coords.map(c=>c[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
   const W=620,H=650,pad=18,scale=Math.min((W-pad*2)/(maxX-minX),(H-pad*2)/(maxY-minY));
   const project=([x,y])=>[pad+(x-minX)*scale,H-pad-(y-minY)*scale];
   const ringPath=ring=>ring.map((c,i)=>{const [x,y]=project(c);return `${i?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`}).join(' ')+'Z';
   const geomPath=g=>{const out=[];const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];polys.forEach(poly=>poly.forEach(ring=>out.push(ringPath(ring))));return out.join(' ')};
-  const featureName=f=>f.properties.name||f.properties.NAME_1||f.properties.st_nm||f.properties.ST_NM||f.properties.state||f.properties.NAME;
+  const escapeText=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const labelledStates=new Set();
-  map.innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="india-boundary-svg" role="group" aria-label="Map of India. Every state and union territory is also available in the state list.">${features.map(f=>{const name=featureName(f);if(!name)return '';const canonical=canonicalIndiaState(name)||name;const alreadyLabelled=labelledStates.has(canonical);labelledStates.add(canonical);const points=[];const collect=c=>{if(typeof c[0]==='number')points.push(c);else c.forEach(collect)};collect(f.geometry.coordinates);const avg=points.length?points.reduce((a,c)=>[a[0]+c[0],a[1]+c[1]],[0,0]).map(v=>v/points.length):[0,0];const [lx,ly]=project(avg);return `<path d="${geomPath(f.geometry)}" tabindex="0" role="button" aria-label="Select ${canonical}" data-map-state="${canonical}" class="india-map-shape ${canonical===canonicalIndiaState(currentRoute.slug||'')?'selected':''}" onclick="selectIndiaState('${canonical.replace(/'/g,"\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectIndiaState('${canonical.replace(/'/g,"\\'")}')}"><title>${canonical}</title></path>${alreadyLabelled?'':`<text class="india-map-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" aria-hidden="true">${canonical.length>13?canonical.slice(0,11)+'…':canonical}</text>`}`}).join('')}</svg>`;
-  map.querySelectorAll('[data-map-state]').forEach(path=>{path.addEventListener('mouseenter',()=>path.classList.add('hovered'));path.addEventListener('mouseleave',()=>path.classList.remove('hovered'));});
- }).catch(()=>{renderIndiaSchematicMap(map);});
+  const shapes=recognized.map(f=>{const canonical=canonicalIndiaState(featureName(f));const alreadyLabelled=labelledStates.has(canonical);labelledStates.add(canonical);
+    const points=[];visitForLabel(f.geometry.coordinates,points);
+    const avg=points.length?points.reduce((a,c)=>[a[0]+c[0],a[1]+c[1]],[0,0]).map(v=>v/points.length):[0,0];const [lx,ly]=project(avg);
+    const label=escapeText(canonical);return `<path d="${geomPath(f.geometry)}" tabindex="0" role="button" aria-label="Select ${label}" data-map-state="${label}" class="india-map-shape ${canonical===canonicalIndiaState(currentRoute.slug||'')?'selected':''}"><title>${label}</title></path>${alreadyLabelled?'':`<text class="india-map-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" aria-hidden="true">${escapeText(canonical.length>13?canonical.slice(0,11)+'…':canonical)}</text>`}`;
+  }).join('');
+  function visitForLabel(c,out){if(typeof c[0]==='number')out.push(c);else c.forEach(x=>visitForLabel(x,out));}
+  map.innerHTML=`<div class="india-map-toolbar" aria-label="Map zoom controls"><button type="button" data-map-zoom="in" aria-label="Zoom in on India map">＋</button><button type="button" data-map-zoom="out" aria-label="Zoom out on India map">−</button><button type="button" data-map-zoom="reset" aria-label="Reset map zoom">Reset</button></div><div class="india-map-viewport"><svg viewBox="0 0 ${W} ${H}" class="india-boundary-svg" role="group" aria-label="Map of India. Select a state, or use the searchable state list."><g class="india-map-zoom-layer">${shapes}</g></svg></div><p class="india-map-help">Select a state to view itineraries. Use + and − to zoom. State list and keyboard controls remain available.</p>`;
+  let zoom=1;
+  const layer=map.querySelector('.india-map-zoom-layer');
+  const applyZoom=()=>{layer.setAttribute('transform',`translate(${W/2} ${H/2}) scale(${zoom}) translate(${-W/2} ${-H/2})`);};
+  map.querySelectorAll('[data-map-zoom]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.mapZoom;zoom=action==='reset'?1:Math.max(1,Math.min(3,zoom*(action==='in'?1.25:0.8)));applyZoom();}));
+  map.querySelectorAll('[data-map-state]').forEach(path=>{
+    path.addEventListener('click',()=>selectIndiaState(path.dataset.mapState));
+    path.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectIndiaState(path.dataset.mapState);}});
+    path.addEventListener('mouseenter',()=>path.classList.add('hovered'));
+    path.addEventListener('mouseleave',()=>path.classList.remove('hovered'));
+  });
+ }).catch(()=>{if(map.isConnected)renderIndiaSchematicMap(map);});
 }
 
 /* ============================================================
