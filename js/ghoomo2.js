@@ -953,13 +953,13 @@ const CATEGORY_META = {
     label: 'Verified Tour Operators', desc: 'Established tour companies', icon: '✓',
     providers: ['Veena World', 'Thomas Cook India', 'Kesari Tours', 'SOTC Travel', 'IRCTC Tourism']
   },
-  ota: {
-    label: 'OTA Platforms', desc: 'Indian online travel platforms', icon: '◎',
-    providers: ['MakeMyTrip', 'Yatra', 'Cleartrip', 'ixigo', 'EaseMyTrip']
-  },
   local: {
     label: 'Local Tour Operators', desc: 'Destination specialists', icon: '⌂',
     providers: null /* generated per destination below */
+  },
+  ota: {
+    label: 'OTA Platforms', desc: 'Indian online travel platforms', icon: '◎',
+    providers: ['MakeMyTrip', 'Yatra', 'Cleartrip', 'ixigo', 'EaseMyTrip']
   }
 };
 
@@ -1883,14 +1883,14 @@ function renderAbout() {
             <p style="margin-top:8px;">${mt('verified_desc')}</p>
           </div>
           <div class="model-card">
-            <div class="icon">◎</div>
-            <h3>${mt('ota_title')}</h3>
-            <p style="margin-top:8px;">${mt('ota_desc')}</p>
-          </div>
-          <div class="model-card">
             <div class="icon">⌂</div>
             <h3>${mt('local_title')}</h3>
             <p style="margin-top:8px;">${mt('local_desc')}</p>
+          </div>
+          <div class="model-card">
+            <div class="icon">◎</div>
+            <h3>${mt('ota_title')}</h3>
+            <p style="margin-top:8px;">${mt('ota_desc')}</p>
           </div>
         </div>
       </div>
