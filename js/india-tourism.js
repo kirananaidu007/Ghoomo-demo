@@ -71,6 +71,30 @@
    utterance.onerror=()=>{if(timer)clearInterval(timer);};
    speechSynthesis.speak(utterance);
  }
+ window.GhoomoTourismDecorateMap=()=>{
+   const svg=document.querySelector('#india-svg-map .india-boundary-svg');
+   if(!svg||svg.dataset.tourismDecorated)return;
+   svg.dataset.tourismDecorated='true';
+   const layer=svg.querySelector('.india-map-zoom-layer');if(!layer)return;
+   const ns='http://www.w3.org/2000/svg';
+   layer.querySelectorAll('[data-map-state]').forEach(path=>{
+     const state=path.getAttribute('data-map-state');
+     const item=LANDMARKS[state];if(!item)return;
+     try{
+       const box=path.getBBox();
+       if(box.width<13||box.height<13)return; // Tiny states remain available in the searchable list.
+       const marker=document.createElementNS(ns,'text');
+       marker.setAttribute('x',String(box.x+box.width/2));
+       marker.setAttribute('y',String(box.y+box.height/2));
+       marker.setAttribute('text-anchor','middle');
+       marker.setAttribute('dominant-baseline','central');
+       marker.setAttribute('class','india-tourism-mini-marker');
+       marker.setAttribute('aria-hidden','true');
+       marker.textContent=item[1];
+       layer.appendChild(marker);
+     }catch{}
+   });
+ };
  window.GhoomoTourismSelect=state=>show(state);
  window.GhoomoTourismRefreshLanguage=()=>{if(currentState&&document.querySelector('#ghoomo-tourism-card'))show(currentState,{speak:false});};
  window.addEventListener('ghoomo-language-change',window.GhoomoTourismRefreshLanguage);
