@@ -24,18 +24,67 @@
  };
  function getLang(){return selectedSpeechLang||chatLang?.value||lang?.value||'en-IN'}
  let speechRate=.68, lastSpokenText='', lastSpokenLang='en-IN';
- function speak(text, code=getLang()){
-   if(!('speechSynthesis' in window)){setStatus('Text-to-speech is not supported in this browser.');return}
-   lastSpokenText=text; lastSpokenLang=code; speechSynthesis.cancel();
+ const normaliseLocale=value=>String(value||'').replace(/_/g,'-').toLowerCase();
+ function voiceForLanguage(voices,code){
+   const requested=normaliseLocale(code), primary=requested.split('-')[0];
+   const exact=voices.filter(v=>normaliseLocale(v.lang)===requested);
+   const sameLanguage=voices.filter(v=>normaliseLocale(v.lang).split('-')[0]===primary);
+   // Never silently substitute a different language: that can make spoken answers unusable.
+   return {exact,sameLanguage,voice:exact[0]||sameLanguage[0]||null};
+ }
+ function loadDeviceVoices(timeout=1800){
+   if(!('speechSynthesis' in window))return Promise.resolve([]);
+   const current=speechSynthesis.getVoices();
+   if(current.length)return Promise.resolve(current);
+   return new Promise(resolve=>{
+     let finished=false;
+     const finish=()=>{
+       if(finished)return;
+       finished=true;
+       try{speechSynthesis.removeEventListener?.('voiceschanged',finish);}catch(e){}
+       resolve(speechSynthesis.getVoices()||[]);
+     };
+     if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',finish,{once:true});
+     else speechSynthesis.onvoiceschanged=finish;
+     window.setTimeout(finish,timeout);
+   });
+ }
+ async function checkSelectedVoice(){
+   const code=getLang();
+   const voices=await loadDeviceVoices();
+   const match=voiceForLanguage(voices,code);
+   if(match.voice)setStatus(names[code]+' voice is available on this device.');
+   else setStatus('No '+(names[code]||code)+' voice is installed on this device. The translated answer will remain readable as text. Install the language voice in your device text-to-speech settings or try another device.');
+   return !!match.voice;
+ }
+ async function speak(text, code=getLang()){
+   if(!('speechSynthesis' in window)){setStatus('Text-to-speech is not supported in this browser. The answer is available as text.');return false}
+   const safeCode=LANGS.includes(code)?code:'en-IN';
+   const voices=await loadDeviceVoices();
+   const match=voiceForLanguage(voices,safeCode);
+   if(!match.voice){
+     setStatus('Your device does not have an installed '+(names[safeCode]||safeCode)+' speech voice. The answer is shown as text. Install this language voice in device settings or try a device with that voice.');
+     return false;
+   }
+   lastSpokenText=String(text);lastSpokenLang=safeCode;
+   speechSynthesis.cancel();
    const chunks=String(text).match(/[^.!?।؟]+[.!?।؟]?/g)||[String(text)];
-   const vs=speechSynthesis.getVoices(), prefix=code.split('-')[0];
-   const exact=vs.filter(v=>v.lang.toLowerCase()===code.toLowerCase()), regional=vs.filter(v=>v.lang.toLowerCase().startsWith(prefix));
    const malePackages=['Madhya Pradesh','Rajasthan','Kerala','Goa','Golden Triangle'];
    const femalePackages=['UP Spiritual Circuit','Uttarakhand','Himachal Pradesh','Kashmir','Andaman'];
-   const packageText=String(text); const preferredGender=malePackages.some(n=>packageText.includes(n))?'male':femalePackages.some(n=>packageText.includes(n))?'female':null;
+   const packageText=String(text);
+   const preferredGender=malePackages.some(n=>packageText.includes(n))?'male':femalePackages.some(n=>packageText.includes(n))?'female':null;
    const genderVoice=arr=>preferredGender?arr.find(v=>preferredGender==='male'?/male|man|david|ravi|heera|mohan/i.test(v.name):/female|woman|zira|susan|priya|lekha/i.test(v.name)):null;
-   const available=genderVoice(exact)||exact[0]||genderVoice(regional)||regional[0]||null; if(!available)setStatus('No installed voice found for '+(names[code]||code)+'. Trying the device default; pronunciation may vary.'); else if(preferredGender && !genderVoice(exact) && !genderVoice(regional))setStatus('Preferred '+preferredGender+' narration is unavailable for this language; using the best matching installed voice.');
-   chunks.map(x=>x.trim()).filter(Boolean).forEach((chunk,i)=>{const u=new SpeechSynthesisUtterance(chunk);u.lang=code;u.rate=speechRate;u.pitch=1;u.voice=available;u.onend=()=>{if(i===chunks.length-1)setStatus('Finished speaking. Say “stop” during a voice session or use Stop voice.');};u.onerror=()=>setStatus('Speech failed. Your device may not have a voice installed for this language.');speechSynthesis.speak(u);});
+   const available=genderVoice(match.exact)||match.exact[0]||genderVoice(match.sameLanguage)||match.voice;
+   let remaining=chunks.map(x=>x.trim()).filter(Boolean).length;
+   chunks.map(x=>x.trim()).filter(Boolean).forEach(chunk=>{
+     const u=new SpeechSynthesisUtterance(chunk);
+     u.lang=safeCode;u.rate=speechRate;u.pitch=1;u.voice=available;
+     u.onstart=()=>setStatus('Speaking in '+(names[safeCode]||safeCode)+'.');
+     u.onend=()=>{remaining--;if(remaining===0)setStatus('Finished speaking in '+(names[safeCode]||safeCode)+'.');};
+     u.onerror=()=>setStatus('Speech playback failed for '+(names[safeCode]||safeCode)+'. Check that the device voice is installed and enabled.');
+     speechSynthesis.speak(u);
+   });
+   return true;
  }
  function setSpeechRate(rate){speechRate=rate;setStatus(rate<.8?'Slower speech selected.':'Normal speech selected.');}
  window.GhoomoVoiceSpeak=(text)=>speak(text,getLang());
@@ -108,7 +157,7 @@
  close?.addEventListener('click',()=>{panel.hidden=true;toggle.setAttribute('aria-expanded','false')});
  form?.addEventListener('submit',e=>{e.preventDefault();const q=input.value;input.value='';ask(q,getLang(),true)});
  document.querySelectorAll('.gchat-prompts [data-question]').forEach(b=>b.addEventListener('click',()=>{panel.hidden=false;toggle?.setAttribute('aria-expanded','true');ask(b.dataset.question,getLang(),true)}));
- window.addEventListener('ghoomo-language-change',e=>{const d=e.detail||{};selectedSpeechLang=d.speechCode||'en-IN';if(chatLang)chatLang.value=selectedSpeechLang;const label=d.label||names[selectedSpeechLang]||selectedSpeechLang;setStatus('Language set to '+label+'. Speech availability depends on your browser/device.');if(pageStatus)pageStatus.textContent='Selected language: '+label+'.'});
+ window.addEventListener('ghoomo-language-change',e=>{const d=e.detail||{};selectedSpeechLang=LANGS.includes(d.speechCode)?d.speechCode:'en-IN';if(chatLang)chatLang.value=selectedSpeechLang;if('speechSynthesis'in window)speechSynthesis.cancel();const label=d.label||names[selectedSpeechLang]||selectedSpeechLang;setStatus('Checking '+label+' speech voice on this device…');if(pageStatus)pageStatus.textContent='Selected language: '+label+'. Checking installed speech voice…';checkSelectedVoice();});
  mic?.addEventListener('click',()=>{
    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
    if(!SR){setStatus('Speech recognition is unavailable in this browser. Try Chrome on Android or type your question.');return}
@@ -129,6 +178,6 @@
  });
  // Per-card Listen buttons intentionally removed to keep the tourism comparison UI uncluttered.
  if(chatLang)chatLang.value=selectedSpeechLang;
- if('speechSynthesis'in window)speechSynthesis.getVoices();
+ if('speechSynthesis'in window){loadDeviceVoices();speechSynthesis.addEventListener?.('voiceschanged',()=>{checkSelectedVoice();});}
  if('serviceWorker'in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 })();
